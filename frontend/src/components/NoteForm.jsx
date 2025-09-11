@@ -78,7 +78,7 @@ const NoteForm = ({
         )}
       </div>
 
-      {/* ✅ Tags */}
+      {/* ✅ Tags
       <div className="form-control">
         <label className="label">
           <span className="label-text">Tags (comma-separated)</span>
@@ -89,7 +89,7 @@ const NoteForm = ({
           className="input input-bordered"
           {...register("tags")} /// ✅ Hook registration
         />
-      </div>
+      </div> */}
 
       {/* ✅ Submit */}
       <div className="text-right">

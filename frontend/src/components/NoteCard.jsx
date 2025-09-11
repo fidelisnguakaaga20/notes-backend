@@ -25,7 +25,7 @@ const NoteCard = ({ note }) => {
 
         <div className="card-actions justify-end mt-4">
           <Link to={`/notes/${note._id}`} className="btn btn-sm btn-primary">
-            View
+            Edit
           </Link>
         </div>
       </div>

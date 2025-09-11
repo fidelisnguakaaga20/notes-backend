@@ -19,7 +19,7 @@ const Navbar = () => {
   return (
     <div className="navbar bg-base-100 shadow-md">
       <div className="container mx-auto flex justify-between items-center px-4 py-2">
-        <a className="text-xl font-bold">MERN Notes</a>
+        <a className="text-xl font-bold">MERN NOTES APP</a>
 
         {user ? (
           <div className="flex items-center gap-4">
