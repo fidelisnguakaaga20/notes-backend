@@ -59,9 +59,9 @@
 // });
 
 
-
+// backend/src/server.js
 import dotenv from "dotenv";
-dotenv.config(); // load env first
+dotenv.config(); // Load .env first
 
 import express from "express";
 import cors from "cors";
@@ -73,7 +73,7 @@ import { connectDB } from "./config/db.js";
 import { authenticateUser } from "./middleware/authMiddleware.js";
 import ratelimiter from "./middleware/rateLimiter.js";
 
-// init Firebase Admin (env in prod, JSON only in dev)
+// Init Firebase Admin (ENV in prod, JSON only in dev)
 import "../utils/firebaseAdmin.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -82,17 +82,25 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-const PROD_ORIGINS = [process.env.FRONTEND_URL].filter(Boolean);
+const PROD_ORIGINS = [
+  process.env.FRONTEND_URL, // e.g. https://notes-backend-eta-one.vercel.app
+].filter(Boolean);
 
-const corsOptions = {
-  origin: process.env.NODE_ENV === "production" ? PROD_ORIGINS : ["http://localhost:5173"],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production"
+        ? PROD_ORIGINS
+        : ["http://localhost:5173"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    maxAge: 86400, // cache preflight for a day
+  })
+);
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // respond to preflight
+// make sure OPTIONS preflight always succeeds
+app.options("*", cors());
 
 app.use(express.json());
 
@@ -102,7 +110,7 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 // protected API
 app.use("/api/notes", authenticateUser, ratelimiter, notesRoutes);
 
-// (optional) serve built frontend from /frontend/dist if you ever co-host
+// (optional) serve static if you ever set SERVE_STATIC=true and build into /frontend/dist
 if (process.env.NODE_ENV === "production" && process.env.SERVE_STATIC === "true") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
   app.get("*", (_req, res) =>
@@ -111,5 +119,7 @@ if (process.env.NODE_ENV === "production" && process.env.SERVE_STATIC === "true"
 }
 
 connectDB().then(() => {
-  app.listen(PORT, () => console.log(`Server started on PORT: ${PORT}`));
+  app.listen(PORT, () => {
+    console.log("Server started on PORT:", PORT);
+  });
 });
