@@ -1,6 +1,9 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://notes-backend-eta-one.vercel.app/" },
+    {
+      "source": "/api/:path*",
+      "destination": "https://notes-backend-1-l40h.onrender.com/api/:path*"
+    },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

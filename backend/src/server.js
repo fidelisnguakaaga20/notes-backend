@@ -59,9 +59,8 @@
 // });
 
 
-// backend/src/server.js
 import dotenv from "dotenv";
-dotenv.config(); // Load .env first
+dotenv.config(); // load .env first
 
 import express from "express";
 import cors from "cors";
@@ -73,7 +72,6 @@ import { connectDB } from "./config/db.js";
 import { authenticateUser } from "./middleware/authMiddleware.js";
 import ratelimiter from "./middleware/rateLimiter.js";
 
-// Init Firebase Admin (ENV in prod, JSON only in dev)
 import "../utils/firebaseAdmin.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -82,35 +80,34 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-const PROD_ORIGINS = [
-  process.env.FRONTEND_URL, // e.g. https://notes-backend-eta-one.vercel.app
+// Allowed origins (prod + local)
+const allowList = [
+  process.env.FRONTEND_URL,           // e.g. https://notes-backend-eta-one.vercel.app
+  "http://localhost:5173"
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? PROD_ORIGINS
-        : ["http://localhost:5173"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    maxAge: 86400, // cache preflight for a day
-  })
-);
+// CORS that always handles preflight
+const corsOptions = {
+  origin(origin, cb) {
+    // allow same-origin or tools (no origin), and any in allowList
+    if (!origin || allowList.includes(origin)) return cb(null, true);
+    return cb(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: false // not using cookies
+};
 
-// make sure OPTIONS preflight always succeeds
-app.options("*", cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handle preflight for all routes
 
 app.use(express.json());
 
-// health check
+// Simple health check
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-// protected API
+// Protected API
 app.use("/api/notes", authenticateUser, ratelimiter, notesRoutes);
 
-// (optional) serve static if you ever set SERVE_STATIC=true and build into /frontend/dist
+// (Optional) serve static build if you ever bundle frontend here
 if (process.env.NODE_ENV === "production" && process.env.SERVE_STATIC === "true") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
   app.get("*", (_req, res) =>

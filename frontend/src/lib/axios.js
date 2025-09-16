@@ -11,27 +11,35 @@
 // });
 
 // export default api;
+
+
 // frontend/src/lib/axios.js
 import axios from "axios";
-import { auth } from "../lib/firebase"; // your initialized firebase app
+import { getAuth } from "firebase/auth";
+
+// If VITE_API_URL is set (Render), use it + /api
+// Otherwise use relative /api and let vercel.json rewrite proxy it.
+const API_ROOT = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : `/api`;
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001",
-  // we don't need withCredentials for Firebase tokens (they go in the header)
+  baseURL: API_ROOT,
+  // We're sending Firebase bearer tokens, not cookies:
+  withCredentials: false,
 });
 
-// Attach Firebase ID token to every request (if logged in)
-api.interceptors.request.use(
-  async (config) => {
-    const user = auth.currentUser;
-    if (user) {
-      const token = await user.getIdToken(/* forceRefresh? false */);
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (err) => Promise.reject(err)
-);
+// Attach Firebase ID token on every request
+api.interceptors.request.use(async (config) => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (user) {
+    const token = await user.getIdToken();
+    config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    delete config.headers.Authorization;
+  }
+  return config;
+});
 
 export default api;
